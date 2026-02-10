@@ -30,21 +30,21 @@ options = Options()
 options.binary_location = '/opt/headless-chromium'
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
-options.add_argument('--single-process')
+# options.add_argument('--single-process')
 options.add_argument('--disable-dev-shm-usage')
 
-driver = webdriver.Chrome(options=options)
 
-def test_element(_css_selector):
+
+def test_element(_driver, _css_selector):
     try:
-        btn = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR, _css_selector)))
+        btn = WebDriverWait(_driver, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR, _css_selector)))
         btn.click()
     except :
-        test_element(_css_selector)
+        test_element(_driver, _css_selector)
     return btn
 
 def handler(event, context):
-    
+    driver = webdriver.Chrome(options=options)
     driver.get(url_login)
     
     txtbox_login = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#inputLogin")))
@@ -52,11 +52,12 @@ def handler(event, context):
     
     txtbox_psw = driver.find_element(By.CSS_SELECTOR,"#inputPassword")
     txtbox_psw.send_keys('V.Esp6991')
-    
-    test_element("input.validation")
+    time.sleep(10)
+    test_element(driver, "input.validation")
     
     driver.get(url_planning)
-    test_element(".wc-next").text
+    time.sleep(10)
+    test_element(driver, ".wc-next").text
     
     '''
     div_1 = test_element("#calendar > div > div.wc-scrollable-grid > table > tbody > tr.wc-grid-row-events > td.ui-state-default.wc-day-column.wc-day-column-first.wc-day-column-last.day-4 > div > div:nth-child(9)").text
@@ -70,10 +71,9 @@ def handler(event, context):
     lst_seances_bad = elements[1]
     lst_seances_bad.click()
     time.sleep(3)
-    test_element("#cboxLoadedContent > div > div > button")
+    test_element(driver, "#cboxLoadedContent > div > div > button")
     response_1 = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#swal2-content"))).text
     
-    driver.close()
     driver.quit()
 
     response = {
