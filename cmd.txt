@@ -7,9 +7,12 @@ docker run -p 9000:8080 inscription_psl_docker
 ### Tester le code ###
 curl.exe -X POST "http://localhost:9000/2015-03-31/functions/function/invocations" -d "{}"
 
-(### Recréer l'image docker une fois que le code est ok ###
+### Recréer l'image docker pour AWS une fois que le code est ok ###
 $env:DOCKER_BUILDKIT="0"
-docker build --platform=linux/amd64 -t inscription_psl_docker .)
+docker build --platform=linux/amd64 -t inscription_psl_docker .
+
+### Login AWS ###
+aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin 202435676950.dkr.ecr.eu-west-3.amazonaws.com
 
 ### tagget et pousser sur AWS ###
 docker tag inscription_psl_docker:latest 202435676950.dkr.ecr.eu-west-3.amazonaws.com/inscription_psl_docker:latest
