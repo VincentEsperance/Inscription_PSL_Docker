@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException
 import traceback
 
-delay = 100
+delay = 240
 MAX_RETRIES = 3
 
 url_login = 'https://sports.monportail.psl.eu/pegasus/index.php'
@@ -23,7 +23,7 @@ options.binary_location = '/opt/chrome/chrome'
 options.add_argument('--headless=new')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-# options.add_argument('--single-process')
+options.add_argument('--single-process')
 
 options.add_argument('--user-data-dir=/tmp/user-data')
 options.add_argument('--data-path=/tmp/data-path')
@@ -46,6 +46,14 @@ def test_element(driver, css_selector, retries=5):
 
     raise TimeoutException(f"Element {css_selector} introuvable")
 
+def safe_get(driver, url, retries=3):
+    for i in range(retries):
+        try:
+            driver.get(url)
+            return
+        except Exception:
+            time.sleep(3)
+    raise Exception("Impossible de charger l’URL après retries")
 
 # -----------------------------
 # HANDLER
@@ -60,7 +68,7 @@ def handler(event, context):
             service = Service('/usr/bin/chromedriver')
             driver = webdriver.Chrome(service=service, options=options)
 
-            driver.get(url_login)
+            safe_get(driver, url_login)
 
             txtbox_login = WebDriverWait(driver, delay).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "#inputLogin"))
