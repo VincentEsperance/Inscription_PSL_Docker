@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException
 import traceback
 
-delay = 240
+delay = 480
 MAX_RETRIES = 3
 
 url_login = 'https://sports.monportail.psl.eu/pegasus/index.php'
@@ -102,8 +102,10 @@ def handler(event, context):
                 )
             )
 
-            top_element = min(elements, key=lambda el: el.location['y'])
-            top_element.click()
+            # top_element = min(elements, key=lambda el: el.location['y'])
+            # top_element.click()
+            bottom_element = max(elements, key=lambda el: el.location['y'])
+            bottom_element.click()
 
             WebDriverWait(driver, delay).until(
                 EC.presence_of_element_located(
