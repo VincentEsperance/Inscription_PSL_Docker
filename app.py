@@ -9,7 +9,7 @@ from selenium.common.exceptions import TimeoutException
 import traceback
 import datetime
 
-delay = 480
+delay = 30
 MAX_RETRIES = 3
 
 url_login = 'https://sports.monportail.psl.eu/pegasus/index.php'
@@ -71,7 +71,7 @@ def test_element(driver, css_selector, retries=5):
             return btn
         except Exception as e:
             log(f"test_element: échec tentative {i+1} — {e}")
-            time.sleep(2)
+            time.sleep(delay)
 
     raise TimeoutException(f"Element {css_selector} introuvable après {retries} tentatives")
 
