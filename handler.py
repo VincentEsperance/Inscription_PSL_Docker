@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 URL = "https://sports.monportail.psl.eu/pegasus/index.php"
 USERNAME = os.environ.get("PEGASUS_USERNAME", "")
 PASSWORD = os.environ.get("PEGASUS_PASSWORD", "")
-ACTIVITY_LABEL = "Volley 3- CSU Jean Sarrailh 31 Avenue Bernanos75005 PARIS"
+ACTIVITY_LABEL = "Badminton5-CSU J.Sarrailh"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -110,18 +110,18 @@ def lambda_handler(event, context):
             # Entre dans l'iframe pour toutes les interactions calendrier
             frame = page.frame_locator("iframe#pegasus_contenu")
 
-            # # ----------------------------------------------------------------
-            # # ETAPE 4 : Semaine suivante (bouton wc-next dans l'iframe)
-            # # ----------------------------------------------------------------
-            # log("Passage a la semaine suivante...")
-            # frame.locator("button.wc-next").click()
-            # wait_for_frame(page, selector_to_wait=".wc-day-column-inner.day-2 .get-syllabus")
+            # ----------------------------------------------------------------
+            # ETAPE 4 : Semaine suivante (bouton wc-next dans l'iframe)
+            # ----------------------------------------------------------------
+            log("Passage a la semaine suivante...")
+            frame.locator("button.wc-next").click()
+            frame.locator(".wc-day-column-inner.day-2 .get-syllabus").first.wait_for(timeout=TIMEOUT)
 
-            # try:
-            #     week_label = frame.locator("h1.wc-title").inner_text()
-            #     log(f"Semaine affichee : {week_label.strip()}")
-            # except Exception:
-            #     pass
+            try:
+                week_label = frame.locator("h1.wc-title").inner_text()
+                log(f"Semaine affichee : {week_label.strip()}")
+            except Exception:
+                pass
 
             # ----------------------------------------------------------------
             # ETAPE 5 : Clic sur le creneau Badminton du mardi
@@ -129,7 +129,7 @@ def lambda_handler(event, context):
             log("Recherche du creneau Badminton du mardi...")
             slot = frame.locator(
                 ".wc-day-column-inner.day-2 .get-syllabus",
-                has_text="Badminton5-CSU J.Sarrailh"
+                has_text=ACTIVITY_LABEL
             ).first
             slot.wait_for(timeout=TIMEOUT)
             slot.click()
