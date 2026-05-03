@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 
 _logs = []
 
+# Timeout standard en ms — 5 minutes pour absorber les pics de charge
+TIMEOUT = 300000
+
 
 def log(msg: str):
     logger.info(msg)
     _logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
 
-def wait_for_page(page, selector_to_wait=None, timeout=30000):
+def wait_for_page(page, selector_to_wait=None, timeout=TIMEOUT):
     """
     Attend que la page soit chargee.
     Si un selecteur est fourni, attend que cet element soit present dans le DOM.
@@ -37,9 +40,9 @@ def wait_for_page(page, selector_to_wait=None, timeout=30000):
         log("Chargement lent detecte, on continue quand meme...")
 
 
-def wait_for_frame(page, selector_to_wait, timeout=30000):
+def wait_for_frame(page, selector_to_wait, timeout=TIMEOUT):
     """
-    Attend qu'un selecteur soit present dans l'iframe pegasus_contenu.
+    Attend qu'un selecteur soit present et visible dans l'iframe pegasus_contenu.
     """
     try:
         frame = page.frame_locator("iframe#pegasus_contenu")
@@ -67,14 +70,14 @@ def lambda_handler(event, context):
                 ],
             )
             page = browser.new_page(viewport={"width": 1280, "height": 900})
-            page.set_default_timeout(30000)
+            page.set_default_timeout(TIMEOUT)
 
             # ----------------------------------------------------------------
             # ETAPE 1 : Connexion
             # ----------------------------------------------------------------
             log(f"Navigation vers {URL}")
             page.goto(URL, wait_until="domcontentloaded")
-            wait_for_page(page, selector_to_wait="input.validation", timeout=30000)
+            wait_for_page(page, selector_to_wait="input.validation")
 
             log("Remplissage du formulaire de connexion...")
             page.locator('input[type="text"]').first.fill(USERNAME)
@@ -82,7 +85,7 @@ def lambda_handler(event, context):
 
             log("Clic sur 'Se connecter'...")
             page.locator("input.validation[value='Se connecter']").click()
-            wait_for_page(page, selector_to_wait=".title-text", timeout=30000)
+            wait_for_page(page, selector_to_wait=".title-text")
 
             body = page.inner_text("body")
             if "Bienvenue" not in body and "portail sportif" not in body.lower():
@@ -101,42 +104,44 @@ def lambda_handler(event, context):
             # ----------------------------------------------------------------
             log("Clic sur le sous-menu 'M inscrire aux seances'...")
             page.locator(".menu-item", has_text="M'inscrire aux séances").click()
-            wait_for_frame(page, selector_to_wait="button.wc-next", timeout=30000)
+            wait_for_frame(page, selector_to_wait="button.wc-next")
             log("Page calendrier chargee.")
 
             # Entre dans l'iframe pour toutes les interactions calendrier
             frame = page.frame_locator("iframe#pegasus_contenu")
 
-            # ----------------------------------------------------------------
-            # ETAPE 4 : Semaine suivante
-            # ----------------------------------------------------------------
-            log("Passage a la semaine suivante...")
-            frame.locator("button.wc-next").click()
-            page.wait_for_timeout(2000)
+            # # ----------------------------------------------------------------
+            # # ETAPE 4 : Semaine suivante (bouton wc-next dans l'iframe)
+            # # ----------------------------------------------------------------
+            # log("Passage a la semaine suivante...")
+            # frame.locator("button.wc-next").click()
+            # wait_for_frame(page, selector_to_wait=".wc-day-column-inner.day-2 .get-syllabus")
 
-            try:
-                week_label = frame.locator("h1.wc-title").inner_text()
-                log(f"Semaine affichee : {week_label.strip()}")
-            except Exception:
-                pass
+            # try:
+            #     week_label = frame.locator("h1.wc-title").inner_text()
+            #     log(f"Semaine affichee : {week_label.strip()}")
+            # except Exception:
+            #     pass
 
             # ----------------------------------------------------------------
-            # ETAPE 5 : Clic sur le creneau Volley du lundi
+            # ETAPE 5 : Clic sur le creneau Badminton du mardi
             # ----------------------------------------------------------------
-            log(f"Recherche du creneau Volley du lundi...")
-            # On cible uniquement la colonne day-1 (lundi) pour éviter les doublons
-            slot = frame.locator(".wc-day-column-inner.day-1 .get-syllabus", has_text="Volley 3- CSU Jean Sarrailh").first
-            slot.wait_for(timeout=30000)
+            log("Recherche du creneau Badminton du mardi...")
+            slot = frame.locator(
+                ".wc-day-column-inner.day-2 .get-syllabus",
+                has_text="Badminton5-CSU J.Sarrailh"
+            ).first
+            slot.wait_for(timeout=TIMEOUT)
             slot.click()
-            page.wait_for_timeout(1200)
             log("Creneau clique, attente de la modale...")
 
             # ----------------------------------------------------------------
-            # ETAPE 6 : Log du statut dans la modale
+            # ETAPE 6 : Attente et log du contenu de la modale
             # ----------------------------------------------------------------
+            frame.get_by_role("button", name="M'inscrire").last.wait_for(timeout=TIMEOUT)
+
             try:
-                wait_for_frame(page, selector_to_wait="button.button-action", timeout=15000)
-                modal_text = frame.locator("button.button-action").locator("..").inner_text()
+                modal_text = frame.locator("button.button-action").last.locator("..").inner_text()
                 log(f"Contenu modale : {modal_text.strip()[:300]}")
             except Exception:
                 log("(Impossible de lire la modale, on continue)")
@@ -146,7 +151,7 @@ def lambda_handler(event, context):
             # ----------------------------------------------------------------
             log("Clic sur le bouton M inscrire...")
             frame.get_by_role("button", name="M'inscrire").last.click()
-            wait_for_page(page, timeout=35000)
+            wait_for_page(page, timeout=TIMEOUT)
 
             # ----------------------------------------------------------------
             # ETAPE 8 : Message de confirmation

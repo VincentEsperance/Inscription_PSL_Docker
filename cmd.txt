@@ -17,3 +17,17 @@ aws ecr get-login-password --region eu-west-3 | docker login --username AWS --pa
 ### tagget et pousser sur AWS ###
 docker tag inscription_psl_docker:latest 202435676950.dkr.ecr.eu-west-3.amazonaws.com/inscription_psl_docker:latest
 docker push 202435676950.dkr.ecr.eu-west-3.amazonaws.com/inscription_psl_docker:latest
+
+
+Commandes Claude :
+1. se connecter à AWS avec la commande ### Login AWS ###
+
+2.
+docker buildx build --platform linux/amd64 --load -t pegasus-lambda:latest .
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+docker tag pegasus-lambda:latest ${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-3.amazonaws.com/pegasus-lambda:latest
+docker push ${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-3.amazonaws.com/pegasus-lambda:latest
+aws lambda update-function-code \
+  --function-name pegasus-inscription \
+  --image-uri ${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-3.amazonaws.com/pegasus-lambda:latest \
+  --region eu-west-3
